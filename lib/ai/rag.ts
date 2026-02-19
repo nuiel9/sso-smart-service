@@ -11,56 +11,63 @@ export async function searchDocuments(
   query: string,
   limit: number = 5
 ): Promise<Document[]> {
-  const supabase = await createClient()
+  try {
+    const embedding = await generateEmbedding(query)
+    if (!embedding) return []
 
-  // Generate embedding for the query using Typhoon
-  const embedding = await generateEmbedding(query)
+    const supabase = await createClient()
+    const { data, error } = await supabase.rpc('match_documents', {
+      query_embedding: embedding,
+      match_threshold: 0.7,
+      match_count: limit,
+    })
 
-  // Search for similar documents using pgvector
-  const { data, error } = await supabase.rpc('match_documents', {
-    query_embedding: embedding,
-    match_threshold: 0.7,
-    match_count: limit,
-  })
+    if (error) {
+      console.error('RAG search error:', error)
+      return []
+    }
 
-  if (error) {
-    console.error('Error searching documents:', error)
+    return (data as Document[]) || []
+  } catch (err) {
+    console.error('searchDocuments unexpected error:', err)
     return []
   }
-
-  return (data as Document[]) || []
 }
 
-async function generateEmbedding(text: string): Promise<number[]> {
-  // Use Typhoon embedding API
-  const response = await fetch('https://api.opentyphoon.ai/v1/embeddings', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.TYPHOON_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'typhoon-v2-embed',
-      input: text,
-    }),
-  })
+export async function generateEmbedding(text: string): Promise<number[] | null> {
+  try {
+    const response = await fetch('https://api.opentyphoon.ai/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.TYPHOON_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'typhoon-v2-embed',
+        input: text,
+      }),
+      signal: AbortSignal.timeout(10_000),
+    })
 
-  if (!response.ok) {
-    throw new Error(`Embedding API error: ${response.status}`)
+    if (!response.ok) {
+      console.error(`Embedding API error: ${response.status}`)
+      return null
+    }
+
+    const data = await response.json()
+    return data.data[0].embedding as number[]
+  } catch (err) {
+    console.error('generateEmbedding error:', err)
+    return null
   }
-
-  const data = await response.json()
-  return data.data[0].embedding
 }
 
 export async function getRelevantContext(query: string): Promise<string> {
-  const documents = await searchDocuments(query)
-
-  if (documents.length === 0) {
+  try {
+    const documents = await searchDocuments(query)
+    if (documents.length === 0) return ''
+    return documents.map((doc) => doc.content).join('\n\n---\n\n')
+  } catch {
     return ''
   }
-
-  return documents
-    .map((doc) => doc.content)
-    .join('\n\n---\n\n')
 }

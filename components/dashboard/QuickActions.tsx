@@ -1,67 +1,98 @@
-'use client'
+import Link from 'next/link'
+import {
+  MessageCircle,
+  ClipboardList,
+  CreditCard,
+  Bell,
+  type LucideIcon,
+} from 'lucide-react'
 
-import { Card, CardContent } from '@/components/ui/card'
+// =============================================================================
+// Config
+// =============================================================================
 
 interface QuickAction {
   id: string
-  title: string
-  icon: string
+  line1: string
+  line2: string
+  icon: LucideIcon
   href: string
+  tileBg: string
+  iconColor: string
 }
 
-const actions: QuickAction[] = [
+const QUICK_ACTIONS: QuickAction[] = [
   {
-    id: 'check-rights',
-    title: 'ตรวจสอบสิทธิ์',
-    icon: '🔍',
-    href: '/member/rights',
+    id: 'chat',
+    line1: 'สอบถาม AI',
+    line2: 'ผู้ช่วย',
+    icon: MessageCircle,
+    href: '/member#chat',
+    tileBg: 'bg-blue-50 hover:bg-blue-100 active:bg-blue-200',
+    iconColor: 'text-blue-600',
   },
   {
-    id: 'claim-benefit',
-    title: 'ยื่นเบิกสิทธิ์',
-    icon: '📝',
-    href: '/member/claim',
+    id: 'benefits',
+    line1: 'ตรวจสอบ',
+    line2: 'สิทธิ์',
+    icon: ClipboardList,
+    href: '/member/benefits',
+    tileBg: 'bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200',
+    iconColor: 'text-emerald-600',
   },
   {
-    id: 'check-status',
-    title: 'ติดตามคำร้อง',
-    icon: '📊',
-    href: '/member/status',
+    id: 'payments',
+    line1: 'สถานะ',
+    line2: 'การจ่ายเงิน',
+    icon: CreditCard,
+    href: '/member/payments',
+    tileBg: 'bg-violet-50 hover:bg-violet-100 active:bg-violet-200',
+    iconColor: 'text-violet-600',
   },
   {
-    id: 'find-hospital',
-    title: 'ค้นหา รพ.',
-    icon: '🏥',
-    href: '/member/hospitals',
-  },
-  {
-    id: 'contact',
-    title: 'ติดต่อ สปส.',
-    icon: '📞',
-    href: '/member/contact',
-  },
-  {
-    id: 'history',
-    title: 'ประวัติ',
-    icon: '📋',
-    href: '/member/history',
+    id: 'notifications',
+    line1: 'การ',
+    line2: 'แจ้งเตือน',
+    icon: Bell,
+    href: '/member/notifications',
+    tileBg: 'bg-orange-50 hover:bg-orange-100 active:bg-orange-200',
+    iconColor: 'text-orange-600',
   },
 ]
 
+// =============================================================================
+// Component — Server Component (pure navigation, no client state needed)
+// =============================================================================
+
 export function QuickActions() {
   return (
-    <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-      {actions.map((action) => (
-        <Card
-          key={action.id}
-          className="hover:shadow-md transition-shadow cursor-pointer"
+    // Mobile-first: 2-col → 4-col on sm+
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {QUICK_ACTIONS.map(({ id, line1, line2, icon: Icon, href, tileBg, iconColor }) => (
+        <Link
+          key={id}
+          href={href}
+          className={[
+            'flex flex-col items-center justify-center gap-2.5',
+            'rounded-xl p-4 min-h-[88px]',
+            'transition-all duration-150 active:scale-95',
+            tileBg,
+          ].join(' ')}
         >
-          <CardContent className="p-4 text-center">
-            <span className="text-3xl">{action.icon}</span>
-            <p className="text-sm mt-2 text-gray-700">{action.title}</p>
-          </CardContent>
-        </Card>
+          {/* Icon in a pill-shaped badge */}
+          <div className="p-2.5 rounded-full bg-white/70 shadow-sm">
+            <Icon className={`w-5 h-5 ${iconColor}`} strokeWidth={1.8} />
+          </div>
+
+          {/* Two-line label — tight on mobile */}
+          <span className="text-xs font-medium text-center text-gray-700 leading-snug">
+            {line1}
+            <br />
+            {line2}
+          </span>
+        </Link>
       ))}
     </div>
   )
 }
+
