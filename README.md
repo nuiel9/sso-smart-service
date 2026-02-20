@@ -1,6 +1,6 @@
 # SSO Smart Service Platform
 
-ระบบบริการอัจฉริยะสำนักงานประกันสังคม (สปส.) — Next.js 16 App Router + Supabase + Typhoon LLM + LINE Messaging API
+ระบบบริการอัจฉริยะสำนักงานประกันสังคม (สปส.) — Next.js 16 App Router + Supabase + Google Gemini AI + LINE Messaging API
 
 ---
 
@@ -8,9 +8,9 @@
 
 | Module | Description |
 |---|---|
-| **Authentication** | Phone OTP login, PDPA consent, role-based routing (member / officer / admin), audit logging |
-| **Member Dashboard** | Real-time benefit status, payment history, notifications, quick actions — Server Components with parallel data fetching |
-| **AI Chatbot** | SSE streaming with Typhoon LLM, RAG via pgvector, rate limiting (30 msg/hr), confidence scoring, officer escalation |
+| **Authentication** | Email/Password login, PDPA consent, role-based routing (member / officer / admin), audit logging |
+| **Member Dashboard** | Benefits status, payment history, notifications, AI chatbot — Server Components with parallel data fetching |
+| **AI Chatbot** | SSE streaming with Google Gemini, rate limiting (30 msg/hr), confidence scoring, officer escalation |
 | **LINE Integration** | Webhook handler, Flex Message templates, 6-slot Rich Menu, phone-based account linking |
 
 ---
@@ -18,11 +18,34 @@
 ## Tech Stack
 
 - **Framework**: Next.js 16 (App Router, TypeScript)
-- **Database / Auth**: Supabase (PostgreSQL + pgvector + Auth)
-- **AI**: Typhoon LLM (`typhoon-v2-70b-instruct` + `typhoon-v2-embed`)
+- **Database / Auth**: Supabase (PostgreSQL + Auth)
+- **AI**: Google Gemini (`gemini-3-flash-preview`)
 - **LINE**: `@line/bot-sdk` v10
 - **UI**: Tailwind CSS v4 + shadcn/ui + Lucide React
 - **Font**: Noto Sans Thai
+
+---
+
+## Pages
+
+| Route | Description |
+|---|---|
+| `/login` | Email/Password login |
+| `/register` | User registration |
+| `/member` | Member dashboard with AI chatbot |
+| `/member/benefits` | Benefits summary (7 types) |
+| `/member/payments` | Payment history & contribution status |
+| `/member/notifications` | Notifications center |
+
+---
+
+## SSO Benefits Information
+
+กรณีว่างงาน (มาตรา 33):
+- **ถูกเลิกจ้าง**: 50% ของค่าจ้าง ไม่เกิน 180 วัน (6 เดือน)
+- **ลาออกเอง**: 30% ของค่าจ้าง ไม่เกิน 90 วัน (3 เดือน)
+- **ฐานเงินเดือนสูงสุด**: 15,000 บาท
+- **เงื่อนไข**: ส่งสมทบ 6 เดือนใน 15 เดือน, ขึ้นทะเบียนว่างงานภายใน 30 วัน
 
 ---
 
@@ -47,7 +70,7 @@ cp .env.example .env.local
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/public key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server-side only) |
-| `TYPHOON_API_KEY` | Typhoon API key from [opentyphoon.ai](https://opentyphoon.ai) |
+| `GEMINI_API_KEY` | Google Gemini API key |
 | `LINE_CHANNEL_ACCESS_TOKEN` | LINE Messaging API channel access token |
 | `LINE_CHANNEL_SECRET` | LINE channel secret (for webhook signature verification) |
 
@@ -62,37 +85,26 @@ supabase db push
 # Or paste the contents of the migration file into the Supabase SQL editor
 ```
 
-Also create the LINE account mapping table (required for LINE integration):
+Migration file: `supabase/migrations/20260219000000_initial_sso_schema.sql`
 
-```sql
-create table public.line_user_mappings (
-  id uuid primary key default gen_random_uuid(),
-  line_user_id text not null unique,
-  user_id uuid not null references auth.users(id) on delete cascade,
-  created_at timestamptz default now()
-);
+### 4. Enable Email Auth in Supabase
 
--- RLS: only service role can read/write
-alter table public.line_user_mappings enable row level security;
-```
+1. Go to Supabase Dashboard → Authentication → Providers
+2. Enable **Email** provider
+3. (Optional) Disable "Confirm email" for demo purposes
 
-### 4. Set up LINE Rich Menu (one-time)
-
-After setting your `LINE_CHANNEL_ACCESS_TOKEN`:
+### 5. Set up LINE Rich Menu (optional)
 
 ```bash
-npx tsx lib/line/rich-menu.ts
+# Create rich menu via API
+curl -X POST http://localhost:3000/api/line/setup-rich-menu
+
+# Then upload the rich menu image (2500×843 px)
 ```
 
-Then upload the rich menu image via LINE Console or the printed `curl` command.
+Rich menu template available at: `/rich-menu-template.html`
 
-Set the webhook URL in LINE Developers Console:
-
-```
-https://<your-domain>/api/line/webhook
-```
-
-### 5. Run the development server
+### 6. Run the development server
 
 ```bash
 npm run dev
@@ -106,80 +118,57 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ```
 app/
-├── (auth)/login/          # Phone OTP login page (Server Component)
-├── (dashboard)/member/    # Member dashboard (async Server Component)
-│   ├── loading.tsx        # Skeleton UI
-│   └── error.tsx          # Error boundary
+├── (auth)/
+│   ├── login/              # Email/Password login
+│   └── register/           # User registration
+├── (dashboard)/member/
+│   ├── page.tsx            # Dashboard with AI chatbot
+│   ├── benefits/           # Benefits summary page
+│   ├── payments/           # Payment history page
+│   └── notifications/      # Notifications page
 ├── api/
-│   ├── auth/callback/     # Supabase OAuth callback
-│   ├── chat/              # AI chatbot — SSE streaming endpoint
-│   └── line/webhook/      # LINE Messaging API webhook
+│   ├── chat/               # AI chatbot — SSE streaming (Gemini)
+│   ├── benefits/           # Benefits API
+│   └── line/
+│       ├── webhook/        # LINE webhook handler
+│       └── setup-rich-menu/ # Rich menu setup API
 
 components/
 ├── auth/
-│   ├── LoginForm.tsx      # Phone + OTP form, PDPA consent
-│   ├── OTPInput.tsx       # 6-digit input, 60s countdown
-│   └── LogoutButton.tsx   # With audit logging
+│   └── LoginForm.tsx       # Email/Password form
 ├── chat/
-│   ├── ChatWindow.tsx     # SSE reader, typing indicator, disclaimer
-│   ├── ChatMessage.tsx    # User/assistant bubbles, streaming cursor
-│   └── ChatInput.tsx      # Quick replies, Send icon, 500-char limit
-└── dashboard/
-    ├── BenefitsCard.tsx   # Status badge, expiry warning
-    ├── QuickActions.tsx   # 2×2 action grid
-    └── NotificationBell.tsx # Dropdown with optimistic mark-as-read
+│   ├── ChatWindow.tsx      # SSE reader, typing indicator
+│   ├── ChatMessage.tsx     # User/assistant bubbles
+│   └── ChatInput.tsx       # Quick replies, send button
 
 lib/
 ├── supabase/
-│   ├── client.ts          # createBrowserClient
-│   ├── server.ts          # createServerClient (cookie-based)
-│   ├── middleware.ts      # Role-based route protection
-│   └── auth.ts            # getUserProfile, logAuditAction, getDashboardPath
+│   ├── client.ts           # Browser client
+│   └── server.ts           # Server client (cookie-based)
 ├── ai/
-│   ├── typhoon.ts         # chatStream() generator, retry ×3, 30s timeout
-│   └── rag.ts             # pgvector RAG, graceful fallback
+│   ├── gemini.ts           # Google Gemini streaming
+│   └── rag.ts              # RAG (disabled for demo)
 └── line/
-    ├── client.ts          # LINE API client, verifySignature
-    ├── templates.ts       # 5 Flex Message templates
-    └── rich-menu.ts       # 6-slot rich menu config + setup script
-
-middleware.ts              # JWT check, protected routes, role-based access
+    ├── client.ts           # LINE API client
+    ├── templates.ts        # Flex Message templates
+    ├── flex-messages.ts    # Additional Flex templates
+    └── rich-menu.ts        # Rich menu config
 ```
 
 ---
 
-## Key Design Decisions
+## AI Integration (Google Gemini)
 
-### Authentication
-- Uses `getUser()` (not `getSession()`) for server-side auth — more secure
-- `/member/*` routes skip the DB role query (auth-only); `/officer/*` and `/admin/*` perform a DB lookup
-- PDPA consent stored in `profiles.pdpa_consent` and required before any data access
+The chatbot uses Google Gemini API with:
+- Model: `gemini-3-flash-preview`
+- Streaming: Server-Sent Events (SSE)
+- Thai language system prompt with SSO knowledge
+- Confidence scoring for officer escalation
 
-### AI Chatbot
-- Streams tokens via `ReadableStream` + `text/event-stream` — messages appear word by word
-- RAG context fetched in parallel with chat history before streaming starts
-- Messages are saved to DB **after** the stream completes (inside `ReadableStream.start()`)
-- Confidence heuristic: starts at 0.8, deducted for uncertainty markers, triggers officer escalation below 0.7
-
-### LINE Integration
-- Signature verified with HMAC-SHA256 before any event processing
-- LINE users without a linked SSO account get a deterministic UUID (SHA-256 of their LINE userId) used as `member_id` — ensuring consistent audit trails
-- Account linking: user sends their SSO-registered phone number → matched against `profiles.phone`
-- Non-streaming AI response (LINE doesn't support SSE)
-
-### Rate Limiting
-- 30 messages / hour / user — enforced via Supabase query (no Redis required)
-- Checks `chat_messages` count across all user sessions in the last hour
-
----
-
-## Role Matrix
-
-| Path | member | officer | admin |
-|---|---|---|---|
-| `/member/*` | ✅ | ✅ | ✅ |
-| `/officer/*` | ❌ | ✅ | ✅ |
-| `/admin/*` | ❌ | ❌ | ✅ |
+```typescript
+// Example: lib/ai/gemini.ts
+const GEMINI_MODEL = 'gemini-3-flash-preview'
+```
 
 ---
 
@@ -192,6 +181,18 @@ middleware.ts              # JWT check, protected routes, role-based access
 │   แจ้งเตือน   │  มาตรา 40   │ ติดต่อ 1506 │
 └──────────────┴──────────────┴──────────────┘
 ```
+
+---
+
+## Database Schema
+
+Key tables:
+- `profiles` - User profiles with SSO member info
+- `benefits` - Member benefits (status, amount, dates)
+- `chat_sessions` - AI chat sessions
+- `chat_messages` - Chat message history
+- `notifications` - User notifications
+- `audit_logs` - PDPA compliance logging
 
 ---
 
@@ -216,10 +217,16 @@ NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 
-# Typhoon LLM
-TYPHOON_API_KEY=sk-...
+# Google Gemini AI
+GEMINI_API_KEY=AIzaSy...
 
-# LINE Messaging API
+# LINE Messaging API (optional)
 LINE_CHANNEL_ACCESS_TOKEN=...
 LINE_CHANNEL_SECRET=...
 ```
+
+---
+
+## License
+
+MIT
