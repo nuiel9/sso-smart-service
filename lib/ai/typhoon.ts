@@ -91,7 +91,7 @@ export async function* chatStream(
             Authorization: `Bearer ${process.env.TYPHOON_API_KEY}`,
           },
           body: JSON.stringify({
-            model: 'typhoon-v2-70b-instruct',
+            model: 'typhoon-v2.5-30b-a3b-instruct',
             messages: [systemMessage, ...messages],
             temperature: 0.3,
             max_tokens: 1024,
@@ -102,7 +102,9 @@ export async function* chatStream(
       )
 
       if (!response.ok) {
-        throw new Error(`Typhoon API error: ${response.status}`)
+        const errorText = await response.text()
+        console.error('Typhoon API error:', response.status, errorText)
+        throw new Error(`Typhoon API error: ${response.status} - ${errorText}`)
       }
 
       if (!response.body) {

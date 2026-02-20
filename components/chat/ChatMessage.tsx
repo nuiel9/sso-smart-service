@@ -72,7 +72,10 @@ export function ChatMessage({ message }: ChatMessageProps) {
         </p>
 
         <div className="flex items-center gap-2 mt-1">
-          <span className={`text-[11px] ${isUser ? 'text-white/60' : 'text-gray-400'}`}>
+          <span
+            className={`text-[11px] ${isUser ? 'text-white/60' : 'text-gray-400'}`}
+            suppressHydrationWarning
+          >
             {formatTime(message.timestamp)}
           </span>
           {message.isEscalated && (

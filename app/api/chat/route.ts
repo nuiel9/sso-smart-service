@@ -1,8 +1,8 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { chatStream, calculateConfidence, CONFIDENCE_THRESHOLD } from '@/lib/ai/typhoon'
+import { chatStream, calculateConfidence, CONFIDENCE_THRESHOLD } from '@/lib/ai/gemini'
 import { getRelevantContext } from '@/lib/ai/rag'
-import type { TyphoonMessage } from '@/lib/ai/typhoon'
+import type { GeminiMessage } from '@/lib/ai/gemini'
 
 const RATE_LIMIT = 30 // messages per hour per user
 
@@ -93,9 +93,9 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // Fetch RAG context and chat history in parallel
+  // Fetch chat history (RAG disabled for demo)
   const [context, historyResult] = await Promise.all([
-    getRelevantContext(message),
+    Promise.resolve(''), // RAG disabled - getRelevantContext(message)
     sessionId
       ? supabase
           .from('chat_messages')
@@ -106,11 +106,11 @@ export async function POST(request: NextRequest) {
       : Promise.resolve({ data: null }),
   ])
 
-  const chatHistory: TyphoonMessage[] = (historyResult.data ?? [])
+  const chatHistory: GeminiMessage[] = (historyResult.data ?? [])
     .filter((m) => m.role === 'user' || m.role === 'assistant')
     .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }))
 
-  const allMessages: TyphoonMessage[] = [...chatHistory, { role: 'user', content: message }]
+  const allMessages: GeminiMessage[] = [...chatHistory, { role: 'user', content: message }]
 
   // Create or reuse session (before streaming so sessionId is available in the done event)
   let currentSessionId = sessionId

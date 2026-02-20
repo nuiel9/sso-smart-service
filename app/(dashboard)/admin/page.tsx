@@ -176,7 +176,7 @@ export default async function AdminDashboard() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span>Model</span>
-                    <span className="font-mono">typhoon-v2-70b-instruct</span>
+                    <span className="font-mono">typhoon-v2.5-30b-a3b-instruct</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>Max Tokens</span>

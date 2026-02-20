@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SSO Rich Menu Template - 2500×843</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Sarabun', 'Noto Sans Thai', sans-serif;
+      background: #f0f0f0;
+      padding: 20px;
+    }
+    .info {
+      max-width: 800px;
+      margin: 0 auto 20px;
+      padding: 16px;
+      background: #fff3cd;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .container {
+      width: 2500px;
+      height: 843px;
+      background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 2px;
+      transform-origin: top left;
+      transform: scale(0.3);
+    }
+    .cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      text-align: center;
+      padding: 20px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .cell:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .icon {
+      width: 100px;
+      height: 100px;
+      margin-bottom: 16px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+    }
+    .label {
+      font-size: 42px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .sublabel {
+      font-size: 24px;
+      opacity: 0.8;
+    }
+    /* Icon colors */
+    .cell:nth-child(1) .icon { color: #2563eb; }
+    .cell:nth-child(2) .icon { color: #16a34a; }
+    .cell:nth-child(3) .icon { color: #9333ea; }
+    .cell:nth-child(4) .icon { color: #f59e0b; }
+    .cell:nth-child(5) .icon { color: #3b82f6; }
+    .cell:nth-child(6) .icon { color: #ef4444; }
+
+    @media print {
+      body { padding: 0; background: white; }
+      .info { display: none; }
+      .container { transform: none; }
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="info">
+    <strong>วิธีใช้:</strong> เปิดหน้านี้ในเบราว์เซอร์ → ปรับ scale เป็น 100% → Screenshot หรือใช้ Figma/Canva สร้างภาพ 2500×843 px
+    <br><br>
+    <strong>ขนาด:</strong> 2500 × 843 pixels | <strong>Format:</strong> PNG หรือ JPEG | <strong>Max size:</strong> 1 MB
+  </div>
+
+  <div class="container">
+    <!-- Row 1 -->
+    <div class="cell">
+      <div class="icon">🔍</div>
+      <div class="label">ตรวจสอบสิทธิ์</div>
+      <div class="sublabel">Check Benefits</div>
+    </div>
+    <div class="cell">
+      <div class="icon">💰</div>
+      <div class="label">สถานะเงิน</div>
+      <div class="sublabel">Payment Status</div>
+    </div>
+    <div class="cell">
+      <div class="icon">🤖</div>
+      <div class="label">AI ถามตอบ</div>
+      <div class="sublabel">AI Assistant</div>
+    </div>
+
+    <!-- Row 2 -->
+    <div class="cell">
+      <div class="icon">🔔</div>
+      <div class="label">แจ้งเตือน</div>
+      <div class="sublabel">Notifications</div>
+    </div>
+    <div class="cell">
+      <div class="icon">📋</div>
+      <div class="label">มาตรา 40</div>
+      <div class="sublabel">Section 40</div>
+    </div>
+    <div class="cell">
+      <div class="icon">📞</div>
+      <div class="label">ติดต่อ 1506</div>
+      <div class="sublabel">Call Hotline</div>
+    </div>
+  </div>
+
+  <script>
+    // Save as image hint
+    console.log('To save as image:')
+    console.log('1. Use browser dev tools → capture screenshot')
+    console.log('2. Or use online HTML to PNG converter')
+    console.log('3. Or recreate in Figma/Canva at 2500×843 px')
+  </script>
+</body>
+</html>

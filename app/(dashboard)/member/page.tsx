@@ -15,6 +15,7 @@ import { BenefitsCard } from '@/components/dashboard/BenefitsCard'
 import { QuickActions } from '@/components/dashboard/QuickActions'
 import { NotificationBell } from '@/components/dashboard/NotificationBell'
 import { LogoutButton } from '@/components/auth/LogoutButton'
+import { ChatWindow } from '@/components/chat/ChatWindow'
 import type { BenefitStatus, SectionType } from '@/lib/types/database'
 
 export const metadata: Metadata = {
@@ -321,6 +322,17 @@ export default async function MemberDashboard() {
             บริการด่วน
           </h2>
           <QuickActions />
+        </section>
+
+        {/* --------- AI Chat --------- */}
+        <section id="chat" aria-labelledby="chat-heading">
+          <h2
+            id="chat-heading"
+            className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3"
+          >
+            สอบถาม AI ผู้ช่วย
+          </h2>
+          <ChatWindow />
         </section>
 
         {/* --------- Benefits Grid --------- */}

@@ -17,7 +17,7 @@ import {
   type BenefitItem,
   type PaymentData,
 } from '@/lib/line/templates'
-import { chat, calculateConfidence, CONFIDENCE_THRESHOLD } from '@/lib/ai/typhoon'
+import { chat, calculateConfidence, CONFIDENCE_THRESHOLD } from '@/lib/ai/gemini'
 import { getRelevantContext } from '@/lib/ai/rag'
 
 // ---------------------------------------------------------------------------

@@ -32,10 +32,14 @@ export function ChatWindow() {
   const [isStreaming, setIsStreaming] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [rateLimitError, setRateLimitError] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    // Scroll within chat container only, not the whole page
+    const container = messagesContainerRef.current
+    if (container) {
+      container.scrollTop = container.scrollHeight
+    }
   }, [])
 
   useEffect(() => {
@@ -176,7 +180,7 @@ export function ChatWindow() {
       </CardHeader>
 
       {/* Messages */}
-      <CardContent className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
         {messages.map((message) => (
           <ChatMessage key={message.id} message={message} />
         ))}
@@ -211,9 +215,7 @@ export function ChatWindow() {
             </span>
           </div>
         )}
-
-        <div ref={messagesEndRef} />
-      </CardContent>
+      </div>
 
       {/* Footer: input + disclaimer */}
       <div className="border-t px-4 py-3 space-y-2 shrink-0">
