@@ -1,0 +1,62 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "regions": ["sin1"],
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 30
+    },
+    "app/api/chat/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/line/webhook/route.ts": {
+      "maxDuration": 30
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/notifications",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/benefit-reminders",
+      "schedule": "0 9 * * 1"
+    },
+    {
+      "path": "/api/cron/section40-outreach",
+      "schedule": "0 10 1 * *"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "@supabase_url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase_anon_key",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
+    "TYPHOON_API_KEY": "@typhoon_api_key",
+    "LINE_CHANNEL_ACCESS_TOKEN": "@line_channel_access_token",
+    "LINE_CHANNEL_SECRET": "@line_channel_secret",
+    "SENTRY_DSN": "@sentry_dsn"
+  }
+}

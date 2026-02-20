@@ -1,8 +1,33 @@
+import { redirect } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { NotificationBell } from '@/components/dashboard/NotificationBell'
+import { LogoutButton } from '@/components/auth/LogoutButton'
+import { createClient } from '@/lib/supabase/server'
 
-export default function AdminDashboard() {
+export default async function AdminDashboard() {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  // Check admin role
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (profile?.role !== 'admin') redirect('/member')
+
+  // Fetch notifications
+  const { data: notifications } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('member_id', user.id)
+    .order('sent_at', { ascending: false })
+    .limit(5)
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -13,11 +38,12 @@ export default function AdminDashboard() {
             <p className="text-purple-200 text-sm">ผู้ดูแลระบบ</p>
           </div>
           <div className="flex items-center gap-4">
-            <NotificationBell />
+            <NotificationBell initialNotifications={notifications || []} />
             <div className="text-right">
               <p className="font-medium">Admin</p>
               <p className="text-purple-200 text-sm">ส่วนกลาง</p>
             </div>
+            <LogoutButton variant="ghost" className="text-white hover:bg-white/10" />
           </div>
         </div>
       </header>
@@ -128,7 +154,7 @@ export default function AdminDashboard() {
                         <span className="ml-2 text-gray-600">{log.user}</span>
                       </div>
                       <div className="text-sm text-gray-500">
-                        {log.time} • {log.ip}
+                        {log.time} - {log.ip}
                       </div>
                     </div>
                   ))}
@@ -170,19 +196,19 @@ export default function AdminDashboard() {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span>API Status</span>
-                    <span className="text-green-600">● Online</span>
+                    <span className="text-green-600">Online</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Database</span>
-                    <span className="text-green-600">● Connected</span>
+                    <span className="text-green-600">Connected</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Typhoon LLM</span>
-                    <span className="text-green-600">● Available</span>
+                    <span className="text-green-600">Available</span>
                   </div>
                   <div className="flex justify-between">
                     <span>LINE API</span>
-                    <span className="text-green-600">● Connected</span>
+                    <span className="text-green-600">Connected</span>
                   </div>
                 </div>
               </CardContent>

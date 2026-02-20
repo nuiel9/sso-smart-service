@@ -1,8 +1,33 @@
+import { redirect } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { NotificationBell } from '@/components/dashboard/NotificationBell'
+import { LogoutButton } from '@/components/auth/LogoutButton'
+import { createClient } from '@/lib/supabase/server'
 
-export default function OfficerDashboard() {
+export default async function OfficerDashboard() {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  // Check officer or admin role
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, zone_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!['officer', 'admin'].includes(profile?.role || '')) redirect('/member')
+
+  // Fetch notifications
+  const { data: notifications } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('member_id', user.id)
+    .order('sent_at', { ascending: false })
+    .limit(5)
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -13,11 +38,14 @@ export default function OfficerDashboard() {
             <p className="text-green-200 text-sm">เจ้าหน้าที่ สปส.</p>
           </div>
           <div className="flex items-center gap-4">
-            <NotificationBell />
+            <NotificationBell initialNotifications={notifications || []} />
             <div className="text-right">
               <p className="font-medium">เจ้าหน้าที่</p>
-              <p className="text-green-200 text-sm">สาขากรุงเทพฯ</p>
+              <p className="text-green-200 text-sm">
+                {profile?.zone_id || 'สาขากรุงเทพฯ'}
+              </p>
             </div>
+            <LogoutButton variant="ghost" className="text-white hover:bg-white/10" />
           </div>
         </div>
       </header>
@@ -106,7 +134,7 @@ export default function OfficerDashboard() {
                     <div>
                       <p className="font-medium">{item.name}</p>
                       <p className="text-sm text-gray-500">
-                        {item.id} • {item.type}
+                        {item.id} - {item.type}
                       </p>
                     </div>
                     <div className="text-right flex items-center gap-3">

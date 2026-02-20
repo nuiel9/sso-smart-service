@@ -64,7 +64,7 @@ function isPublicPath(pathname: string): boolean {
 }
 
 function redirectTo(url: URL, pathname: string, params?: Record<string, string>): NextResponse {
-  const redirectUrl = url.clone()
+  const redirectUrl = new URL(url.toString())
   redirectUrl.pathname = pathname
   redirectUrl.search = ''
   if (params) {
